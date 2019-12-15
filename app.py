@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 """
 Created on Sun Dec 15 03:27:57 2019
 
@@ -8,17 +6,14 @@ Created on Sun Dec 15 03:27:57 2019
 
 from flask import Flask, request, jsonify, render_template
 import pickle
+import keras.models
+from load import *
 from keras.models import model_from_json
 
 app = Flask(__name__)
 
 global model, graph
 model, graph = init()
-
-graph = tf.get_default_graph()
-# loading model
-model = model_from_json(open('model.json').read())
-model.load_weights('model_weights.h5')
 tokenizer = pickle.load(open('convert.pkl','rb'))
 
 @app.route('/')
