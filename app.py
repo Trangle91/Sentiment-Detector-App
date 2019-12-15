@@ -9,6 +9,7 @@ import pickle
 import keras.models
 from load import *
 from keras.models import model_from_json
+from keras.preprocessing.text import Tokenizer
 
 app = Flask(__name__)
 
