@@ -15,6 +15,7 @@ app = Flask(__name__)
 global model, graph
 model, graph = init()
 
+graph = tf.get_default_graph()
 # loading model
 model = model_from_json(open('model.json').read())
 model.load_weights('model_weights.h5')
