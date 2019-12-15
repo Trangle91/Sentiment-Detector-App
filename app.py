@@ -33,7 +33,7 @@ def predict():
             result = "negative"
         else:
             result = "positive"
-    return render_template('index.html', prediction_text='The sentence is {}'.format(result))
+    return render_template('index.html', Result='The sentence is {}'.format(result))
 
 
 if __name__ == "__main__":
