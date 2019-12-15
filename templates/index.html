@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cancer prediction</title>
+    <style>
+        body {
+            margin: 0;
+            background: pink;
+            font-family: Helvetica, sans-serif;
+        }
+        .outer-box {
+            min-height: 80vh;
+            position: relative;
+            max-width: 800px;
+            left: 50%;
+            margin-top: 10vh;
+            transform: translate(-50%);
+            background: white;
+        }
+        .heading {
+            margin: 5px;
+            padding: 15px;
+            text-align: center; 
+            font-size: 2rem;
+            color: #443b3b;
+            position: relative;
+        }
+        .heading::after {
+            content: "";
+            width: 100%;
+            position: absolute;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            margin-bottom: 10px;
+            background: gray;
+        }
+        
+        .wrap {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        button {
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 10px;
+            background: pink;
+            outline: none;
+            margin: 40px auto;
+            min-width: 200px;
+            color: purple;
+            transition: all 0.3s ease-out;
+            border: none;
+            font-size: 30px;
+                width:120px;
+                height:50px;
+        }
+        button:hover {
+            background: gray;
+        }
+        .result {
+            position: relative;
+            margin-bottom: 30px;
+            text-align: center;
+            background: white;
+            color: white;
+            font-size: 30px;
+            padding-bottom: 35px;
+        }
+
+        p {
+            padding: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="outer-box">
+        <div class="heading">Sentiment Detector App</div>
+        <form class="form-class" action="{{ url_for('predict')}}" align="center" method="post">
+            <p> Enter your sentence here</p>
+
+                <textarea name="message" rows="10" cols="100"></textarea>
+            </br>
+            <div class="wrap">
+                <button type="submit" class="btn btn-primary btn-block btn-large">Predict</button>
+            </div>
+        </form>
+        <br>
+        <div class="result">
+            {{ Result}}
+        </div>
+
+    </div>
+
+
+</body>
+
+</html>
