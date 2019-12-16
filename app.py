@@ -28,11 +28,7 @@ def predict():
         data = [message]
         vect = tokenizer.transform(data).toarray()
         prediction = model.predict(vect)
-    
-        if prediction[0]:
-            result = "negative"
-        else:
-            result = "positive"
+  
     return render_template('index.html', Result='The sentence is {}'.format(result))
 
 
