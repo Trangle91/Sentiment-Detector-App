@@ -29,7 +29,7 @@ def predict():
         vect = tokenizer.transform(data).toarray()
         prediction = model.predict(vect)
   
-    return render_template('result.html', Result='The sentence is {}'.format(result))
+    return render_template('result.html', prediction = prediction)
 
 
 if __name__ == "__main__":
