@@ -20,13 +20,16 @@ json_file.close()
 model = model_from_json(loaded_model_json)
 #load woeights into new model
 model.load_weights("model_weights.h5")
+
+model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
 tokenizer = pickle.load(open('convert.pkl','rb'))
 
 @app.route('/',methods=[])
 def home():
     return render_template('index.html')
         
-@app.route('/predict',methods=['POST'])
+@app.route('/predict',methods=['GET','POST'])
 def predict():
     if request.method == 'POST':
         message = request.form['message']
