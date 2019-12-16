@@ -17,11 +17,11 @@ global model, graph
 model, graph = init()
 tokenizer = pickle.load(open('convert.pkl','rb'))
 
-@app.route('/')
+@app.route('/',methods=['GET'])
 def home():
     return render_template('index.html')
         
-@app.route('/predict',methods=['POST'])
+@app.route('/predict',methods=['GET','POST'])
 def predict():
     if request.method == 'POST':
         message = request.form['message']
