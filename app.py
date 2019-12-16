@@ -30,12 +30,12 @@ def predict():
         message = request.form['message']
         data = [message]
         vect = tokenizer.transform(data).toarray()
-        with graph.as_default():
-            prediction = model.predict(vect)
-            if prediction == 0:
-                result = "Neg"
-            else:
-                result = "Pos"
+
+        prediction = model.predict(vect)
+        if prediction == 0:
+            result = "Neg"
+        else:
+            result = "Pos"
     return render_template('index.html', Result='The sentiment is {}'.format(result))
 
 
