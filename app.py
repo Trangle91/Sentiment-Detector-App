@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, render_template
 import pickle
 from load import init
 import keras.models
-
+from sklearn.feature_extraction.text import CountVectorizer
 from keras.models import model_from_json
 from keras.preprocessing.text import Tokenizer
 
