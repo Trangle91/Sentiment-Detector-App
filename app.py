@@ -6,7 +6,7 @@ Created on Sun Dec 15 03:27:57 2019
 
 from flask import Flask, request, jsonify, render_template
 import pickle
-from load.py import *
+from load import init
 import keras.models
 
 from keras.models import model_from_json
