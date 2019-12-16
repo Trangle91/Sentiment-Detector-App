@@ -32,9 +32,11 @@ def predict():
         vect = tokenizer.transform(data).toarray()
         with graph.as_default():
             prediction = model.predict(vect)
-        result = prediction
-  
-    return render_template('index.html', Result = result)
+            if prediction == 0:
+                result = "Neg"
+            else:
+                result = "Pos"
+    return render_template('index.html', Result='The sentiment is {}'.format(result))
 
 
 if __name__ == "__main__":
