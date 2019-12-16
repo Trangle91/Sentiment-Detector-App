@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, render_template
 import pickle
 from load import init
 import keras.models
-from sklearn.feature_extraction.text import CountVectorizer
+
 from keras.models import model_from_json
 from keras.preprocessing.text import Tokenizer
 
@@ -18,8 +18,7 @@ app = Flask(__name__)
 global model, graph
 model, graph = init()
 #loading tokenizer
-converter = pickle.load(open('transform.pkl','rb'))
-
+tokenizer = pickle.load(open('converter.pkl','rb'))
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -29,7 +28,7 @@ def predict():
     if request.method == 'POST':
         message = request.form['message']
         data = [message]
-        vect = converter.transform(data).toarray()
+        vect = tokenizer.texts_to_sequences(data).toarray()
 
         prediction = model.predict(vect)
         if prediction == 0:
