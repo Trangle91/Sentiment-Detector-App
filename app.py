@@ -18,7 +18,7 @@ app = Flask(__name__)
 global model, graph
 model, graph = init()
 #loading tokenizer
-tokenizer = pickle.load(open('convert.pkl','rb'))
+converter = pickle.load(open('transform.pkl','rb'))
 
 @app.route('/')
 def home():
@@ -29,7 +29,7 @@ def predict():
     if request.method == 'POST':
         message = request.form['message']
         data = [message]
-        vect = tokenizer.transform(data).toarray()
+        vect = converter.transform(data).toarray()
 
         prediction = model.predict(vect)
         if prediction == 0:
