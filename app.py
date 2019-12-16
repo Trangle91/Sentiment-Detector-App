@@ -30,12 +30,11 @@ def predict():
         message = request.form['message']
         data = [message]
         vect = tokenizer.transform(data).toarray()
-        with graph.as_default():
-            prediction = model.predict(vect)
-            if prediction[0]:
-                result = "Malignant"
-            else:
-                result = "Benign"
+        prediction = model.predict(vect)
+        if prediction[0]:
+            result = "Malignant"
+        else:
+            result = "Benign"
   
     return render_template('index.html', Result = result)
 
