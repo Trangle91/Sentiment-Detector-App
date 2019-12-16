@@ -30,7 +30,8 @@ def predict():
         message = request.form['message']
         data = [message]
         vect = tokenizer.transform(data).toarray()
-        prediction = model.predict(vect)
+        with graph.as_default():
+            prediction = model.predict(vect)
   
     return render_template('index.html', Result = prediction)
 
