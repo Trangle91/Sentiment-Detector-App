@@ -32,8 +32,12 @@ def predict():
         vect = tokenizer.transform(data).toarray()
         with graph.as_default():
             prediction = model.predict(vect)
+            if prediction[0]:
+                result = "Malignant"
+            else:
+                result = "Benign"
   
-    return render_template('index.html', Result = prediction)
+    return render_template('index.html', Result = result)
 
 
 if __name__ == "__main__":
