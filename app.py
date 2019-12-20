@@ -33,9 +33,13 @@ def predict():
         vect = cv.transform(data).toarray()
 
         prediction = model.predict(vect)
+        if prediction == 1:
+            result = "positive"
+        else:
+            result = "negative"
         
     return render_template('index.html', Result='The sentiment is {}'.format(result))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
