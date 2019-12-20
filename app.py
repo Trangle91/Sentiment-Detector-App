@@ -82,7 +82,7 @@ def predict():
         vect = pad_sequences(vect, padding='post', maxlen=100)
         prediction = model.predict(vect)
         
-return render_template('index.html', Result=prediction)
+    return render_template('index.html', Result=prediction)
 
 if __name__ == '__main__':
     app.run(debug=True)
