@@ -81,8 +81,5 @@ def predict():
         vect = tokenizer.texts_to_sequences(data)
         vect = pad_sequences(vect, padding='post', maxlen=100)
         prediction = model.predict(vect)
-        if prediction == 1:
-            result = "positive"
-        else:
-            result = "negative"
-return render_template('index.html', Result='The sentiment is {}'.format(result))
+        
+return render_template('index.html', Result=prediction)
