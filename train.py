@@ -1,94 +1,217 @@
 
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import RandomizedSearchCV
+
+from keras.models import Sequential
+from keras import layers
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.wrappers.scikit_learn import KerasClassifier
+
+import os
+
 import pandas as pd
-import numpy as np
-import tensorflow as tf
 
-df = pd.read_csv("yelp_combined.txt", names=['sentence', 'label'], sep='\t')
+filepath_dict = {'yelp':   './yelp_labelled.txt',
+                 'amazon': './amazon_cells_labelled.txt',
+                 'imdb':   './imdb_labelled.txt'}
 
-#spliting data
-X = df['sentence']
-y = df['label']
-X[0], y[0]
+df_list = []
+for source, filepath in filepath_dict.items():
+    df = pd.read_csv(filepath, names=['sentence', 'label'], sep='\t')
+    df['source'] = source  # Add another column filled with the source name
+    df_list.append(df)
 
-#cleaning text
-import re
-def clean_X(text):
-  text = text.split(".")
-  text = ' '.join(text)
-  text = text.lower()
-  text = re.sub("[^a-zA-Z\- ]"," ",text)
-  text = re.sub(" +"," ",text)
-  text = text.strip()
-  return text
+df = pd.concat(df_list)
 
-X = X.apply(lambda text: clean_X(text))
+for source in df['source'].unique():
+    df_source = df[df['source'] == source]
+    sentences = df_source['sentence'].values
+    y = df_source['label'].values
 
-# Creating vocab
-vocab = []
-for sen in X:
-  sen = sen.lower().split(" ")
-  vocab.extend(sen)
-vocab = list(set(vocab))
-vocab.append("<PAD>")
-vocab_size = len(vocab)
-print("Vocab :: ",vocab)
-print("Vocab size ::",vocab_size)
+    sentences_train, sentences_test, y_train, y_test = train_test_split(
+        sentences, y, test_size=0.25, random_state=1000)
 
-# Find sentence with maximum words and find the number of words present in it
-max_len_sentence = None 
-max_len = 0 
-for sen in X:
-  no_of_words = len(sen.split())
-  if no_of_words>max_len:
-    max_len = no_of_words
-    max_len_sentence = sen
-max_len_sentence, max_len
 
-# <PAD>
-X = [X[idx].split() + ["<PAD>"] * (max_len - len(X[idx].split()) ) for idx in range(len(X))]
+    vectorizer = CountVectorizer()
+    vectorizer.fit(sentences_train)
+    X_train = vectorizer.transform(sentences_train)
+    X_test  = vectorizer.transform(sentences_test)
 
-# Converting all samples to indices
-word_to_id = {vocab[word_id]:word_id for word_id in range(len(vocab))}
-numerized_sentences = []
-for sen in X:
-  sen = [word_to_id[word] for word in sen]
-  numerized_sentences.append(sen)
+    classifier = LogisticRegression()
+    classifier.fit(X_train, y_train)
+    score = classifier.score(X_test, y_test)
+    print('Accuracy for {} data: {:.4f}'.format(source, score))
 
-print("Numerized data :",numerized_sentences)
+# import pickle
+# from sklearn.feature_extraction.text import CountVectorizer
+# for source in df['source'].unique():
+#     df_source = df[df['source'] == source]
+#     sentences = df_source['sentence'].values
+#     y = df_source['label'].values
 
-np.array(numerized_sentences).shape
+    # cv = CountVectorizer()
+    # X = cv.fit_transform(sentences)
+    # pickle.dump(cv,open("transform.pkl","wb"))
 
-dimension = 50
-embedding_matrix = np.random.rand(vocab_size, dimension)
-embedding_matrix
+tokenizer = Tokenizer(num_words=5000)
+tokenizer.fit_on_texts(sentences_train)
 
-#creating vector matrices 
-tf.reset_default_graph()
-tf_embedding_matrix = tf.Variable(embedding_matrix)
+X_train = tokenizer.texts_to_sequences(sentences_train)
+X_test = tokenizer.texts_to_sequences(sentences_test)
 
-sen_indices = tf.placeholder(dtype=tf.int32, shape=[None,None])
-sen_to_vec = tf.nn.embedding_lookup(tf_embedding_matrix, sen_indices)
-rnn_cell = tf.compat.v1.nn.rnn_cell.BasicRNNCell(num_units=16)
-sen_to_vec = tf.cast(sen_to_vec, tf.float32)
-outputs_for_tagging, output_for_classification = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=sen_to_vec, dtype=tf.float32)
+vocab_size = len(tokenizer.word_index) + 1  # Adding 1 because of reserved 0 index
 
-classification_logits = tf.squeeze(tf.contrib.layers.fully_connected(output_for_classification, 1, activation_fn=tf.sigmoid))
-classification_targets = tf.placeholder(dtype=tf.float32 ,shape=[None])
-classification_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=classification_targets, logits=classification_logits))
-train_op = tf.train.AdamOptimizer(0.01).minimize(classification_loss)
+print(sentences_train[2])
+print(X_train[2])
 
-# """check accuracy"""
-# correct_prediction = tf.equal(tf.argmax(classification_logits,1), tf.argmax(classification_targets,1))
-# accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+for word in ['the', 'all','fan']:
+    print('{}: {}'.format(word, tokenizer.word_index[word]))
 
-with tf.Session() as sess:
-  sess.run(tf.global_variables_initializer())
-  for epoch in range(50):
-    feed_dict = {sen_indices: numerized_sentences, classification_targets: y}
-    output_classification, cl_logits, loss, _ = sess.run([classification_targets,
-                                                                        classification_logits,
-                                                                        classification_loss,
-                                                                        train_op], feed_dict=feed_dict)
-    print("Rnn final outputs:: ", output_classification)
-    print("Loss :: ",loss)
-    # print("Accuracy :: ",acc)
+maxlen = 100
+
+X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
+X_test = pad_sequences(X_test, padding='post', maxlen=maxlen)
+
+print(X_train[0, :])
+
+embedding_dim = 100
+
+model = Sequential()
+model.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
+model.add(layers.Conv1D(128, 5, activation='relu'))
+model.add(layers.GlobalMaxPooling1D())
+model.add(layers.Dense(10, activation='relu'))
+model.add(layers.Dense(1, activation='sigmoid'))
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+model.summary()
+
+history = model.fit(X_train, y_train,
+                    epochs=10,
+                    verbose=False,
+                    validation_data=(X_test, y_test),
+                    batch_size=10)
+loss, accuracy = model.evaluate(X_train, y_train, verbose=False)
+print("Training Accuracy: {:.4f}".format(accuracy))
+loss, accuracy = model.evaluate(X_test, y_test, verbose=False)
+print("Testing Accuracy:  {:.4f}".format(accuracy))
+
+def plot_history(history):
+    acc = history.history['acc']
+    val_acc = history.history['val_acc']
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    x = range(1, len(acc) + 1)
+
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(x, acc, 'b', label='Training acc')
+    plt.plot(x, val_acc, 'r', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    plt.plot(x, loss, 'b', label='Training loss')
+    plt.plot(x, val_loss, 'r', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
+
+plot_history(history)
+
+def create_model(num_filters, kernel_size, vocab_size, embedding_dim, maxlen):
+    model = Sequential()
+    model.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
+    model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
+    model.add(layers.GlobalMaxPooling1D())
+    model.add(layers.Dense(10, activation='relu'))
+    model.add(layers.Dense(1, activation='sigmoid'))
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+param_grid = dict(num_filters=[32, 64, 128],
+                  kernel_size=[3, 5, 7],
+                  vocab_size=[5000], 
+                  embedding_dim=[50],
+                  maxlen=[100])
+
+epochs = 20
+embedding_dim = 50
+maxlen = 100
+output_file = 'output.txt'
+
+# Run grid search for each source (yelp, amazon, imdb)
+for source, frame in df.groupby('source'):
+    print('Running grid search for data set :', source)
+    sentences = df['sentence'].values
+    y = df['label'].values
+
+    # Train-test split
+    sentences_train, sentences_test, y_train, y_test = train_test_split(
+        sentences, y, test_size=0.25, random_state=1000)
+
+    # Tokenize words
+    tokenizer = Tokenizer(num_words=5000)
+    tokenizer.fit_on_texts(sentences_train)
+    X_train = tokenizer.texts_to_sequences(sentences_train)
+    X_test = tokenizer.texts_to_sequences(sentences_test)
+
+    # Adding 1 because of reserved 0 index
+    vocab_size = len(tokenizer.word_index) + 1
+    # Pad sequences with zeros
+    X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
+    X_test = pad_sequences(X_test, padding='post', maxlen=maxlen)
+
+    # Parameter grid for grid search
+    param_grid = dict(num_filters=[32, 64, 128],
+                      kernel_size=[3, 5, 7],
+                      vocab_size=[vocab_size],
+                      embedding_dim=[embedding_dim],
+                      maxlen=[maxlen])
+    model_out = KerasClassifier(build_fn=create_model,
+                            epochs=epochs, batch_size=10,
+                            verbose=False)
+    grid = RandomizedSearchCV(estimator=model_out, param_distributions=param_grid,
+                              cv=4, verbose=1, n_iter=5)
+    grid_result = grid.fit(X_train, y_train)
+
+    # Evaluate testing set
+    test_accuracy = grid.score(X_test, y_test)
+
+    s = ('Running {} data set\nBest Accuracy : '
+             '{:.4f}\n{}\nTest Accuracy : {:.4f}\n\n')
+    output_string = s.format(
+        source,
+        grid_result.best_score_,
+        grid_result.best_params_,
+        test_accuracy)
+    print(output_string)
+
+# # saving model
+# json_model = model.model.to_json()
+# open('model.json', 'w').write(json_model)
+# # saving weights
+# model.model.save_weights('model_weights.h5', overwrite=True)
+
+# # model_out.model.save("model.h5")
+
+# df.head()
+
+# df.to_csv(r'text_data.csv')
+
+# import pickle
+# tokenizer = Tokenizer(num_words=5000)
+# tokenizer.fit_on_texts(sentences_train)
+# pickle.dump(tokenizer, open("convert.pkl", 'wb'))
