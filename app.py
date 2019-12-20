@@ -12,13 +12,15 @@ import keras.models
 from keras.models import model_from_json
 from keras.preprocessing.text import Tokenizer
 
+#loading Flask
 app = Flask(__name__)
 
 #loading model
 global model, graph
 model, graph = init()
 #loading tokenizer
-tokenizer = pickle.load(open('converter.pkl','rb'))
+cv = pickle.load(open('transform.pkl','rb'))
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -28,13 +30,10 @@ def predict():
     if request.method == 'POST':
         message = request.form['message']
         data = [message]
-        vect = tokenizer.texts_to_sequences(data).toarray()
+        vect = cv.transform(data).toarray()
 
         prediction = model.predict(vect)
-        if prediction == 0:
-            result = "Neg"
-        else:
-            result = "Pos"
+        
     return render_template('index.html', Result='The sentiment is {}'.format(result))
 
 
