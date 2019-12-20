@@ -83,3 +83,6 @@ def predict():
         prediction = model.predict(vect)
         
 return render_template('index.html', Result=prediction)
+
+if __name__ == '__main__':
+    app.run(debug=True)
