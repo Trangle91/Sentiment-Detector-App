@@ -19,9 +19,9 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.wrappers.scikit_learn import KerasClassifier
 
 import os
-
 import pandas as pd
 
+#read datasets and concat them into a dataframe
 filepath_dict = {'yelp':   './yelp_labelled.txt',
                  'amazon': './amazon_cells_labelled.txt',
                  'imdb':   './imdb_labelled.txt'}
@@ -34,101 +34,7 @@ for source, filepath in filepath_dict.items():
 
 df = pd.concat(df_list)
 
-for source in df['source'].unique():
-    df_source = df[df['source'] == source]
-    sentences = df_source['sentence'].values
-    y = df_source['label'].values
-
-    sentences_train, sentences_test, y_train, y_test = train_test_split(
-        sentences, y, test_size=0.25, random_state=1000)
-
-
-    vectorizer = CountVectorizer()
-    vectorizer.fit(sentences_train)
-    X_train = vectorizer.transform(sentences_train)
-    X_test  = vectorizer.transform(sentences_test)
-
-    classifier = LogisticRegression()
-    classifier.fit(X_train, y_train)
-    score = classifier.score(X_test, y_test)
-    print('Accuracy for {} data: {:.4f}'.format(source, score))
-
-# import pickle
-# from sklearn.feature_extraction.text import CountVectorizer
-# for source in df['source'].unique():
-#     df_source = df[df['source'] == source]
-#     sentences = df_source['sentence'].values
-#     y = df_source['label'].values
-
-    # cv = CountVectorizer()
-    # X = cv.fit_transform(sentences)
-    # pickle.dump(cv,open("transform.pkl","wb"))
-
-tokenizer = Tokenizer(num_words=5000)
-tokenizer.fit_on_texts(sentences_train)
-
-X_train = tokenizer.texts_to_sequences(sentences_train)
-X_test = tokenizer.texts_to_sequences(sentences_test)
-
-vocab_size = len(tokenizer.word_index) + 1  # Adding 1 because of reserved 0 index
-
-print(sentences_train[2])
-print(X_train[2])
-
-for word in ['the', 'all','fan']:
-    print('{}: {}'.format(word, tokenizer.word_index[word]))
-
-maxlen = 100
-
-X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
-X_test = pad_sequences(X_test, padding='post', maxlen=maxlen)
-
-print(X_train[0, :])
-
-embedding_dim = 100
-
-model = Sequential()
-model.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
-model.add(layers.Conv1D(128, 5, activation='relu'))
-model.add(layers.GlobalMaxPooling1D())
-model.add(layers.Dense(10, activation='relu'))
-model.add(layers.Dense(1, activation='sigmoid'))
-model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-model.summary()
-
-history = model.fit(X_train, y_train,
-                    epochs=10,
-                    verbose=False,
-                    validation_data=(X_test, y_test),
-                    batch_size=10)
-loss, accuracy = model.evaluate(X_train, y_train, verbose=False)
-print("Training Accuracy: {:.4f}".format(accuracy))
-loss, accuracy = model.evaluate(X_test, y_test, verbose=False)
-print("Testing Accuracy:  {:.4f}".format(accuracy))
-
-def plot_history(history):
-    acc = history.history['acc']
-    val_acc = history.history['val_acc']
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-    x = range(1, len(acc) + 1)
-
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(x, acc, 'b', label='Training acc')
-    plt.plot(x, val_acc, 'r', label='Validation acc')
-    plt.title('Training and validation accuracy')
-    plt.legend()
-    plt.subplot(1, 2, 2)
-    plt.plot(x, loss, 'b', label='Training loss')
-    plt.plot(x, val_loss, 'r', label='Validation loss')
-    plt.title('Training and validation loss')
-    plt.legend()
-
-plot_history(history)
-
+#define 1D convolutions model
 def create_model(num_filters, kernel_size, vocab_size, embedding_dim, maxlen):
     model = Sequential()
     model.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
@@ -141,6 +47,7 @@ def create_model(num_filters, kernel_size, vocab_size, embedding_dim, maxlen):
                   metrics=['accuracy'])
     return model
 
+#the grid used to tune hyper-parameters
 param_grid = dict(num_filters=[32, 64, 128],
                   kernel_size=[3, 5, 7],
                   vocab_size=[5000], 
@@ -168,9 +75,10 @@ for source, frame in df.groupby('source'):
     X_train = tokenizer.texts_to_sequences(sentences_train)
     X_test = tokenizer.texts_to_sequences(sentences_test)
 
-    # Adding 1 because of reserved 0 index
+    #find vocab size
     vocab_size = len(tokenizer.word_index) + 1
-    # Pad sequences with zeros
+    
+    # Pad sequences to normalize the length
     X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
     X_test = pad_sequences(X_test, padding='post', maxlen=maxlen)
 
@@ -199,19 +107,3 @@ for source, frame in df.groupby('source'):
         test_accuracy)
     print(output_string)
 
-# # saving model
-# json_model = model.model.to_json()
-# open('model.json', 'w').write(json_model)
-# # saving weights
-# model.model.save_weights('model_weights.h5', overwrite=True)
-
-# # model_out.model.save("model.h5")
-
-# df.head()
-
-# df.to_csv(r'text_data.csv')
-
-# import pickle
-# tokenizer = Tokenizer(num_words=5000)
-# tokenizer.fit_on_texts(sentences_train)
-# pickle.dump(tokenizer, open("convert.pkl", 'wb'))
